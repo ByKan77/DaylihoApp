@@ -85,11 +85,10 @@ class _SecondPageState extends State<SecondPage> {
                           crossAxisAlignment: CrossAxisAlignment
                               .start, // Alignement du texte avec l'image
                           children: [
-                            // Image à gauche, réduite
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.asset(
-                                'lib/assets/image/images.jpg', // Assurez-vous que le chemin est correct
+                                'lib/assets/image/images.jpg',
                                 height: 80, // Taille réduite de l'image
                                 width: 80, // Largeur réduite de l'image
                                 fit: BoxFit.cover,
@@ -146,9 +145,7 @@ class _SecondPageState extends State<SecondPage> {
                                         ),
                                         child: const Text(
                                           'Réserver',
-                                          style: TextStyle(
-                                              fontSize:
-                                                  12), // Réduction de la taille du texte du bouton
+                                          style: TextStyle(fontSize: 12),
                                         ),
                                       ),
                                     ),
@@ -171,6 +168,36 @@ class _SecondPageState extends State<SecondPage> {
           }
         },
       ),
+      FutureBuilder<List>(
+        future: _user,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView.builder(
+              itemCount: snapshot.data?.length,
+              itemBuilder: (context, i) {
+                final nom = snapshot.data?[i]['nom'] ?? 'Nom non disponible';
+                final prenom =
+                    snapshot.data?[i]['prenom'] ?? 'Prénom non disponible';
+                return Card(
+                  child: ListTile(
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(nom, style: const TextStyle(fontSize: 20)),
+                        Text(prenom, style: const TextStyle(fontSize: 20)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          } else {
+            return const Center(
+              child: Text("Pas de données"),
+            );
+          }
+        },
+      ),
     ];
 
     return Scaffold(
@@ -189,9 +216,9 @@ class _SecondPageState extends State<SecondPage> {
         indicatorColor: Colors.amber,
         destinations: const <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.people),
-            icon: Icon(Icons.people_outline),
-            label: 'Utilisateurs',
+            selectedIcon: Icon(Icons.book_online),
+            icon: Icon(Icons.book_outlined),
+            label: 'Réservations',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.calendar_month),
@@ -199,9 +226,9 @@ class _SecondPageState extends State<SecondPage> {
             label: 'Séances',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.message),
-            icon: Icon(Icons.message_outlined),
-            label: 'Messages',
+            selectedIcon: Icon(Icons.account_circle),
+            icon: Icon(Icons.account_circle_outlined),
+            label: 'Compte',
           ),
         ],
       ),

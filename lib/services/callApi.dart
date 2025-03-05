@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class Utilisateur {
-  static String baseUrl = 'http://localhost:1234';
+  static String baseUrl = 'http://localhost:2000';
 
   static Future<List> getAllUser() async {
     try {
@@ -21,7 +21,7 @@ class Utilisateur {
 }
 
 class CheckAccounts {
-  static String baseUrl = 'http://localhost:1234';
+  static String baseUrl = 'http://localhost:2000';
 
   static Future<Map<String, dynamic>> checkUser(
       String email, String password) async {
@@ -45,7 +45,7 @@ class CheckAccounts {
 }
 
 class AllSeance {
-  static String baseUrl = 'http://localhost:1234';
+  static String baseUrl = 'http://localhost:2000';
 
   static Future<List<dynamic>> getAllSeance() async {
     try {
@@ -55,6 +55,30 @@ class AllSeance {
       );
 
       if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      } else {
+        throw Exception("Erreur serveur : ${res.statusCode}");
+      }
+    } catch (err) {
+      throw Exception("Erreur réseau : $err");
+    }
+  }
+}
+
+class ReservationSeance {
+  static String baseUrl = 'http://localhost:2000';
+
+  static Future<Map<String, dynamic>> reserverSeance(
+      int idSeance, int idUtilisateur) async {
+    try {
+      var res = await http.post(
+        Uri.parse("$baseUrl/user/reserveSeance"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(
+            {'id_seance': idSeance, 'id_utilisateur': idUtilisateur}),
+      );
+
+      if (res.statusCode == 201) {
         return jsonDecode(res.body);
       } else {
         throw Exception("Erreur serveur : ${res.statusCode}");
