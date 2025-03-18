@@ -4,10 +4,8 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:myapp/services/callApi.dart';
 
 class FirstPage extends StatefulWidget {
-  const FirstPage({super.key});
-
   @override
-  State<FirstPage> createState() => _FirstPageState();
+  _FirstPageState createState() => _FirstPageState();
 }
 
 class _FirstPageState extends State<FirstPage> {
@@ -30,12 +28,22 @@ class _FirstPageState extends State<FirstPage> {
       Map<String, dynamic> user =
           await CheckAccounts.checkUser(email, password);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SecondPage(firstValue: email, user: password),
-        ),
-      );
+      // Récupérer l'utilisateur complet depuis l'API après la connexion
+      Map<String, dynamic> userDetails =
+          await Utilisateur.getUserByEmail(email);
+
+      if (userDetails.isNotEmpty) {
+        int userId = userDetails['id'];
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SecondPage(email: email, userId: userId),
+          ),
+        );
+      } else {
+        print("Aucun utilisateur trouvé avec cet email.");
+      }
     } catch (error) {
       showDialog(
         context: context,
@@ -64,102 +72,71 @@ class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Login Page'),
+      ),
       body: Center(
-        child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 'Dayliho',
                 style: TextStyle(
-                  color: Color.fromARGB(255, 255, 115, 0),
-                  fontSize: 30,
-                  fontStyle: FontStyle.italic,
-                  fontFamily: 'Times New Roman',
-                  fontWeight: FontWeight.w500,
+                  color: Colors.orange,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
-              // Animation
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const SizedBox(width: 20.0, height: 100.0),
-                  const Text(
-                    'Be',
-                    style: TextStyle(fontSize: 43.0),
-                  ),
-                  const SizedBox(width: 20.0, height: 100.0),
-                  DefaultTextStyle(
-                    style: const TextStyle(
-                      fontSize: 40.0,
-                      fontFamily: 'Horizon',
-                    ),
-                    child: AnimatedTextKit(
-                      animatedTexts: [
-                        RotateAnimatedText('AWESOME'),
-                        RotateAnimatedText('OPTIMISTIC'),
-                        RotateAnimatedText('DIFFERENT'),
-                      ],
-                      onTap: () {
-                        debugPrint("Tap Event");
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Form(
-                key: _loginFormKey,
-                child: SizedBox(
-                  width: 600.0,
+              SizedBox(height: 20),
+              Container(
+                width: 300, // Définir une largeur fixe pour le cadre
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Form(
+                  key: _loginFormKey,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          controller: _userController,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Email',
-                            icon: Icon(Icons.email),
-                          ),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$")
-                                    .hasMatch(value)) {
-                              return 'Veuillez entrer un email valide';
-                            }
-                            return null;
-                          },
-                        ),
+                    children: <Widget>[
+                      TextFormField(
+                        controller: _userController,
+                        decoration: InputDecoration(labelText: 'Email'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          return null;
+                        },
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          controller: _userPassword,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Mot de passe',
-                            icon: Icon(Icons.lock),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer un mot de passe valide';
-                            }
-                            return null;
-                          },
-                        ),
+                      SizedBox(height: 10),
+                      TextFormField(
+                        controller: _userPassword,
+                        decoration: InputDecoration(labelText: 'Mot de passe'),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       _isLoading
-                          ? const CircularProgressIndicator()
+                          ? CircularProgressIndicator()
                           : ElevatedButton(
                               onPressed: _login,
-                              child: const Text("Se connecter"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Colors.orange, // Couleur de fond
+                                foregroundColor:
+                                    Colors.white, // Couleur du texte
+                              ),
+                              child: Text('Connexion'),
                             ),
                     ],
                   ),

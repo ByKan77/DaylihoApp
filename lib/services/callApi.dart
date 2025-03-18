@@ -2,26 +2,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class Utilisateur {
-  static String baseUrl = 'http://localhost:2000';
+  static String baseUrl = 'http://localhost:1234';
+  static Future<Map<String, dynamic>> getUserByEmail(String email) async {
+    final response =
+        await http.get(Uri.parse("$baseUrl/user/getUserByEmail?email=$email"));
 
-  static Future<List> getAllUser() async {
-    try {
-      var res = await http.get(Uri.parse("$baseUrl/user/getUsers"));
-      if (res.statusCode == 200) {
-        print("testfddddddddddddddddddddddddddddd");
-        print(res.body);
-        return jsonDecode(res.body);
-      } else {
-        return Future.error("erreur serveur");
-      }
-    } catch (err) {
-      return Future.error(err);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception("Échec de la récupération des données");
     }
   }
 }
 
 class CheckAccounts {
-  static String baseUrl = 'http://localhost:2000';
+  static String baseUrl = 'http://localhost:1234';
 
   static Future<Map<String, dynamic>> checkUser(
       String email, String password) async {
@@ -45,7 +40,7 @@ class CheckAccounts {
 }
 
 class AllSeance {
-  static String baseUrl = 'http://localhost:2000';
+  static String baseUrl = 'http://localhost:1234';
 
   static Future<List<dynamic>> getAllSeance() async {
     try {
@@ -65,21 +60,21 @@ class AllSeance {
   }
 }
 
-class ReservationSeance {
-  static String baseUrl = 'http://localhost:2000';
+class BookSeance {
+  static String baseUrl = 'http://localhost:1234';
 
   static Future<Map<String, dynamic>> reserverSeance(
       int idSeance, int idUtilisateur) async {
     try {
       var res = await http.post(
-        Uri.parse("$baseUrl/user/reserveSeance"),
+        Uri.parse("$baseUrl/video/bookSeance/$idUtilisateur/$idSeance"),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(
-            {'id_seance': idSeance, 'id_utilisateur': idUtilisateur}),
       );
 
       if (res.statusCode == 201) {
-        return jsonDecode(res.body);
+        return jsonDecode(res.body); // Réservation réussie
+      } else if (res.statusCode == 409) {
+        throw Exception("Cette séance est déjà réservée.");
       } else {
         throw Exception("Erreur serveur : ${res.statusCode}");
       }
