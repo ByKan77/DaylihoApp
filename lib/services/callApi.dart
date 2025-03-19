@@ -82,4 +82,41 @@ class BookSeance {
       throw Exception("Erreur réseau : $err");
     }
   }
+
+  static Future<void> annulerReservation(
+      int idSeance, int idUtilisateur) async {
+    try {
+      var res = await http.delete(
+        Uri.parse("$baseUrl/video/deleteReservation/$idUtilisateur/$idSeance"),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (res.statusCode != 200) {
+        throw Exception("Erreur serveur : ${res.statusCode}");
+      }
+    } catch (err) {
+      throw Exception("Erreur réseau : $err");
+    }
+  }
+}
+
+class GetSeance {
+  static String baseUrl = 'http://localhost:1234';
+
+  static Future<List<dynamic>> getSeanceById(int idUtilisateur) async {
+    try {
+      var res = await http.get(
+        Uri.parse("$baseUrl/video/getBookedSeances/$idUtilisateur"),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as List<dynamic>;
+      } else {
+        throw Exception("Erreur serveur : ${res.statusCode}");
+      }
+    } catch (err) {
+      throw Exception("Erreur réseau : $err");
+    }
+  }
 }

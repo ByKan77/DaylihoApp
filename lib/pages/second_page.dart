@@ -14,6 +14,7 @@ class SecondPage extends StatefulWidget {
 class _SecondPageState extends State<SecondPage> {
   late Future<List> _seances;
   late Future<Map<String, dynamic>> _user;
+  late Future<List> _reservedSeances;
   int _currentPageIndex = 0;
   late String _password; // Champ pour le mot de passe récupéré
 
@@ -22,6 +23,7 @@ class _SecondPageState extends State<SecondPage> {
     super.initState();
     _user = Utilisateur.getUserByEmail(widget.email);
     _seances = AllSeance.getAllSeance();
+    _reservedSeances = GetSeance.getSeanceById(widget.userId);
   }
 
   Future<void> _reserverSeance(int idSeance) async {
@@ -30,6 +32,7 @@ class _SecondPageState extends State<SecondPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Séance réservée avec succès!')),
       );
+      _refreshReservedSeances(); // Rafraîchir les réservations après une réservation réussie
     } catch (error) {
       String errorMessage = error.toString();
 
@@ -39,6 +42,26 @@ class _SecondPageState extends State<SecondPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
+      );
+    }
+  }
+
+  void _refreshReservedSeances() {
+    setState(() {
+      _reservedSeances = GetSeance.getSeanceById(widget.userId);
+    });
+  }
+
+  Future<void> _annulerReservation(int idSeance) async {
+    try {
+      await BookSeance.annulerReservation(idSeance, widget.userId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Réservation annulée avec succès!')),
+      );
+      _refreshReservedSeances(); // Rafraîchir les réservations après une annulation réussie
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'annulation: $error')),
       );
     }
   }
@@ -86,12 +109,50 @@ class _SecondPageState extends State<SecondPage> {
         },
       ),
 
-      // ✅ Nouvelle Page Réservations
-      Center(
-        child: Text(
-          "Page Réservations",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+      // ✅ Page Réservations
+      FutureBuilder<List>(
+        future: _reservedSeances,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView.builder(
+              itemCount: snapshot.data?.length,
+              itemBuilder: (context, i) {
+                final seance = snapshot.data?[i];
+                final titre = seance?['titre'] ?? 'Titre non disponible';
+                final description =
+                    seance?['description'] ?? 'Description non disponible';
+                final idSeance = seance?['id'];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5.0),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListTile(
+                      title: Text(titre),
+                      subtitle: Text(description),
+                      trailing: IconButton(
+                        icon: Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          if (idSeance != null) {
+                            _annulerReservation(idSeance);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+                child: Text("Erreur lors du chargement des réservations"));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
       ),
 
       // ✅ Page des séances
@@ -214,6 +275,9 @@ class _SecondPageState extends State<SecondPage> {
         onDestinationSelected: (int index) {
           setState(() {
             _currentPageIndex = index;
+            if (index == 1) {
+              _refreshReservedSeances(); // Rafraîchir les réservations lorsque l'utilisateur navigue vers la page des réservations
+            }
           });
         },
         selectedIndex: _currentPageIndex,
