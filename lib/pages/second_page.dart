@@ -48,6 +48,53 @@ class _SecondPageState extends State<SecondPage> {
     final ThemeData theme = Theme.of(context);
 
     final List<Widget> pages = [
+      // ✅ Page d'accueil
+      FutureBuilder<Map<String, dynamic>>(
+        future: _user,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final user = snapshot.data!;
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Bienvenue ${user['prenom']} !',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 20),
+                    Icon(Icons.home, size: 100, color: Colors.orange),
+                    SizedBox(height: 20),
+                    Text(
+                      'Nous sommes heureux de vous voir. Naviguez à travers les sections pour gérer vos séances et informations personnelles.',
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Erreur lors du chargement des données"));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
+
+      // ✅ Nouvelle Page Réservations
+      Center(
+        child: Text(
+          "Page Réservations",
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
+
+      // ✅ Page des séances
       FutureBuilder<List>(
         future: _seances,
         builder: (context, snapshot) {
@@ -78,8 +125,8 @@ class _SecondPageState extends State<SecondPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange, // Couleur de fond
-                          foregroundColor: Colors.white, // Couleur du texte
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
                         ),
                         child: Text('Réserver'),
                       ),
@@ -93,14 +140,14 @@ class _SecondPageState extends State<SecondPage> {
           }
         },
       ),
+
+      // ✅ Page du compte utilisateur
       FutureBuilder<Map<String, dynamic>>(
         future: _user,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final user = snapshot.data!;
-            // Vérifier que le mot de passe n'est pas nul
-            _password =
-                user['mot_de_passe'] ?? ''; // Si null, on met une chaîne vide
+            _password = user['mot_de_passe'] ?? '';
 
             return Padding(
               padding: const EdgeInsets.all(20.0),
@@ -108,18 +155,13 @@ class _SecondPageState extends State<SecondPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Photo de profil centrée en dehors de l'encadré
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.orange,
-                      child: Icon(
-                        Icons.account_circle,
-                        size: 60,
-                        color: Colors.white,
-                      ),
+                      child: Icon(Icons.account_circle,
+                          size: 60, color: Colors.white),
                     ),
                     SizedBox(height: 20),
-                    // Conteneur pour les informations de l'utilisateur
                     Container(
                       width: 500,
                       padding: const EdgeInsets.all(20),
@@ -130,32 +172,25 @@ class _SecondPageState extends State<SecondPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Nom
                           Text("Nom:", style: TextStyle(fontSize: 16)),
                           SizedBox(height: 5),
                           Text(user['nom'] ?? 'Nom non disponible',
                               style: TextStyle(fontSize: 18)),
                           SizedBox(height: 15),
-                          // Prénom
                           Text("Prénom:", style: TextStyle(fontSize: 16)),
                           SizedBox(height: 5),
                           Text(user['prenom'] ?? 'Prénom non disponible',
                               style: TextStyle(fontSize: 18)),
                           SizedBox(height: 15),
-                          // Email
                           Text("Email:", style: TextStyle(fontSize: 16)),
                           SizedBox(height: 5),
                           Text(user['email'] ?? 'Email non disponible',
                               style: TextStyle(fontSize: 18)),
                           SizedBox(height: 20),
-                          // Mot de passe (masqué)
                           Text("Mot de passe:", style: TextStyle(fontSize: 16)),
                           SizedBox(height: 5),
                           Text(
-                            '*' *
-                                (_password.length > 0
-                                    ? _password.length
-                                    : 6), // Si le mot de passe est vide, afficher 6 astérisques par défaut
+                            '*' * (_password.length > 0 ? _password.length : 6),
                             style: TextStyle(fontSize: 18),
                           ),
                         ],
@@ -184,6 +219,16 @@ class _SecondPageState extends State<SecondPage> {
         selectedIndex: _currentPageIndex,
         indicatorColor: Colors.amber,
         destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.book_online),
+            icon: Icon(Icons.book_online_outlined),
+            label: 'Réservations',
+          ),
           NavigationDestination(
             selectedIcon: Icon(Icons.calendar_month),
             icon: Icon(Icons.calendar_today_outlined),
