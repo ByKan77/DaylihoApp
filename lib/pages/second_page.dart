@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/services/callApi.dart';
+import 'first_page.dart';
 
 class SecondPage extends StatefulWidget {
   final String email;
@@ -16,7 +17,7 @@ class _SecondPageState extends State<SecondPage> {
   late Future<Map<String, dynamic>> _user;
   late Future<List> _reservedSeances;
   int _currentPageIndex = 0;
-  late String _password; // Champ pour le mot de passe récupéré
+  late String _password;
 
   @override
   void initState() {
@@ -32,14 +33,12 @@ class _SecondPageState extends State<SecondPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Séance réservée avec succès!')),
       );
-      _refreshReservedSeances(); // Rafraîchir les réservations après une réservation réussie
+      _refreshReservedSeances();
     } catch (error) {
       String errorMessage = error.toString();
-
       if (errorMessage.contains("Cette séance est déjà réservée")) {
         errorMessage = "Vous avez déjà réservé cette séance.";
       }
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
@@ -58,7 +57,7 @@ class _SecondPageState extends State<SecondPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Réservation annulée avec succès!')),
       );
-      _refreshReservedSeances(); // Rafraîchir les réservations après une annulation réussie
+      _refreshReservedSeances();
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur lors de l\'annulation: $error')),
@@ -66,12 +65,69 @@ class _SecondPageState extends State<SecondPage> {
     }
   }
 
+  bool _isSeanceReserved(int idSeance, List reservedSeances) {
+    for (var seance in reservedSeances) {
+      if (seance['id'] == idSeance) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: Colors.orange, width: 2),
+          ),
+          child: Container(
+            width: 250, // Réduction de la largeur
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Déconnexion', style: TextStyle(fontSize: 20)),
+                SizedBox(height: 20),
+                Text('Voulez-vous vous déconnecter ?'),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: Text('Non'),
+                    ),
+                    SizedBox(width: 20),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => FirstPage()),
+                          (route) => false,
+                        );
+                      },
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.green),
+                      child: Text('Oui'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
     final List<Widget> pages = [
-      // ✅ Page d'accueil
       FutureBuilder<Map<String, dynamic>>(
         future: _user,
         builder: (context, snapshot) {
@@ -82,127 +138,142 @@ class _SecondPageState extends State<SecondPage> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      'Bienvenue ${user['prenom']} !',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
+                    Text('Bienvenue ${user['prenom']} !',
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange)),
                     SizedBox(height: 20),
-                    Icon(Icons.home, size: 100, color: Colors.orange),
+                    Icon(Icons.fitness_center, size: 100, color: Colors.orange),
                     SizedBox(height: 20),
                     Text(
-                      'Nous sommes heureux de vous voir. Naviguez à travers les sections pour gérer vos séances et informations personnelles.',
-                      style: TextStyle(fontSize: 16),
+                      'Accédez à vos séances et gérez vos réservations.',
                       textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
               ),
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text("Erreur lors du chargement des données"));
+            return Center(child: Text("Erreur de chargement"));
           } else {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
         },
       ),
-
-      // ✅ Page Réservations
       FutureBuilder<List>(
         future: _reservedSeances,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ListView.builder(
+              padding: EdgeInsets.all(10),
               itemCount: snapshot.data?.length,
               itemBuilder: (context, i) {
-                final seance = snapshot.data?[i];
-                final titre = seance?['titre'] ?? 'Titre non disponible';
-                final description =
-                    seance?['description'] ?? 'Description non disponible';
-                final idSeance = seance?['id'];
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5.0),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      title: Text(titre),
-                      subtitle: Text(description),
-                      trailing: IconButton(
-                        icon: Icon(Icons.close, color: Colors.red),
-                        onPressed: () {
-                          if (idSeance != null) {
-                            _annulerReservation(idSeance);
-                          }
-                        },
-                      ),
+                final seance = snapshot.data![i];
+                return Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  elevation: 4,
+                  child: ListTile(
+                    title: Text(seance['titre'] ?? '',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(seance['description'] ?? ''),
+                    trailing: IconButton(
+                      icon: Icon(Icons.cancel, color: Colors.red),
+                      onPressed: () => _annulerReservation(seance['id']),
                     ),
                   ),
                 );
               },
             );
           } else if (snapshot.hasError) {
-            return Center(
-                child: Text("Erreur lors du chargement des réservations"));
+            return Center(child: Text("Erreur de chargement"));
           } else {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
         },
       ),
-
-      // ✅ Page des séances
       FutureBuilder<List>(
         future: _seances,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return ListView.builder(
-              itemCount: snapshot.data?.length,
-              itemBuilder: (context, i) {
-                final seance = snapshot.data?[i];
-                final titre = seance?['titre'] ?? 'Titre non disponible';
-                final description =
-                    seance?['description'] ?? 'Description non disponible';
-                final idSeance = seance?['id'];
+            return FutureBuilder<List>(
+              future: _reservedSeances,
+              builder: (context, reservedSnapshot) {
+                if (reservedSnapshot.hasData) {
+                  return ListView.builder(
+                    padding: EdgeInsets.all(10),
+                    itemCount: snapshot.data?.length,
+                    itemBuilder: (context, i) {
+                      final seance = snapshot.data![i];
+                      final titre = seance['titre'] ?? 'Titre non disponible';
+                      final description =
+                          seance['description'] ?? 'Description non disponible';
+                      final lieu = seance['lieu'] ??
+                          'Lieu non disponible'; // Extraction du lieu
+                      final dateDebut = seance['dateDebut'] ?? '';
+                      final dateFin = seance['dateFin'] ?? '';
+                      final idSeance = seance['id'];
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5.0),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      title: Text(titre),
-                      subtitle: Text(description),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          if (idSeance != null) {
-                            _reserverSeance(idSeance);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
+                      // Formater les heures
+                      final heureDebut = dateDebut.isNotEmpty
+                          ? DateTime.parse(dateDebut)
+                              .toLocal()
+                              .toString()
+                              .substring(11, 16)
+                          : 'N/A';
+                      final heureFin = dateFin.isNotEmpty
+                          ? DateTime.parse(dateFin)
+                              .toLocal()
+                              .toString()
+                              .substring(11, 16)
+                          : 'N/A';
+
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15)),
+                        elevation: 4,
+                        child: ListTile(
+                          title: Text(titre,
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(description),
+                              SizedBox(height: 5),
+                              Text('Lieu : $lieu',
+                                  style: TextStyle(
+                                      color: Colors.grey)), // Affichage du lieu
+                              Text('🕒 $heureDebut - $heureFin',
+                                  style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                          trailing: _isSeanceReserved(
+                                  idSeance, reservedSnapshot.data!)
+                              ? Text('Réservée',
+                                  style: TextStyle(color: Colors.grey))
+                              : ElevatedButton(
+                                  onPressed: () => _reserverSeance(idSeance),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange),
+                                  child: Text('Réserver',
+                                      style: TextStyle(color: Colors.white))),
                         ),
-                        child: Text('Réserver'),
-                      ),
-                    ),
-                  ),
-                );
+                      );
+                    },
+                  );
+                } else {
+                  return Center(child: CircularProgressIndicator());
+                }
               },
             );
           } else {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
         },
       ),
-
-      // ✅ Page du compte utilisateur
       FutureBuilder<Map<String, dynamic>>(
         future: _user,
         builder: (context, snapshot) {
@@ -269,42 +340,62 @@ class _SecondPageState extends State<SecondPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.orange,
+        leading: IconButton(
+          icon: Icon(Icons.logout, color: Colors.white),
+          onPressed: _showLogoutConfirmationDialog,
+        ),
+        title: Text('Mon Espace', style: TextStyle(color: Colors.white)),
+      ),
       body: pages[_currentPageIndex],
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Colors.white,
+        indicatorColor: Colors.orange.shade100,
+        selectedIndex: _currentPageIndex,
         onDestinationSelected: (int index) {
           setState(() {
             _currentPageIndex = index;
-            if (index == 1) {
-              _refreshReservedSeances(); // Rafraîchir les réservations lorsque l'utilisateur navigue vers la page des réservations
-            }
+            if (index == 1) _refreshReservedSeances();
           });
         },
-        selectedIndex: _currentPageIndex,
-        indicatorColor: Colors.amber,
-        destinations: const <Widget>[
+        destinations: const [
           NavigationDestination(
-            selectedIcon: Icon(Icons.home),
             icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home, color: Colors.orange),
             label: 'Accueil',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.book_online),
             icon: Icon(Icons.book_online_outlined),
+            selectedIcon: Icon(Icons.book_online, color: Colors.orange),
             label: 'Réservations',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.calendar_month),
             icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_month, color: Colors.orange),
             label: 'Séances',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.account_circle),
             icon: Icon(Icons.account_circle_outlined),
+            selectedIcon: Icon(Icons.account_circle, color: Colors.orange),
             label: 'Compte',
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoTile(String label, String? value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("$label :", style: TextStyle(fontSize: 16)),
+        SizedBox(height: 5),
+        Text(value ?? 'Non disponible',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        SizedBox(height: 15),
+      ],
     );
   }
 }
